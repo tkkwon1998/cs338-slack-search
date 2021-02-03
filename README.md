@@ -2,4 +2,4 @@
 
 venv + code to run slack bot
 
-pull master 
+slack app is in master branch
