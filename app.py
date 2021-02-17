@@ -49,16 +49,16 @@ def what_handler(message, say):
     obj_toks = [tok for tok in doc if (tok.dep_ == "pobj")]
 
     query = ""
-    if 'definition' in sub_toks[0].string:
-        query = obj_toks[0].string.lower()
+    if 'definition' in sub_toks[0].text:
+        query = obj_toks[0].text.lower()
+
+    say(f'You asked about: "{query}." Thinking...')
 
     query = "intitle:" + query
 
     # Build up string to be googled. Query is repeated twice to highlight it.
     # https://www.lifewire.com/how-to-search-specific-domain-in-google-3481807
     search_string = f'site:en.wikipedia.org {query}' #{query}'
-
-    say(f'You asked about: "{query}." Thinking...')
 
     topics = definition(message, say)
     

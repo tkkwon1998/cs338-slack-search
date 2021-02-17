@@ -21,6 +21,7 @@ today = datetime.datetime.today().date()
 today_epoch = datetime.datetime(today.year, today.month, today.day).timestamp()
 today_epoch = datetime.datetime.now().timestamp()
 
+
 def get_messages(message):
     client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
     channel_id = message["channel"]
@@ -32,8 +33,10 @@ def get_messages(message):
         text = ""
         list_form = []
 
+        # 'bot_id'
         for s in conversation_history:
             try:
+                # Filter out the slackbot
                 if s['type'] == 'message':
                     text += s['text'] + " "
                     list_form.append(s['text'])
@@ -49,11 +52,6 @@ def get_messages(message):
 
 
 def extract_topic(text_list):
-    from sklearn.datasets import fetch_20newsgroups
-
-    dataset = fetch_20newsgroups(shuffle=True, random_state=1, remove=('headers', 'footers', 'quotes'))
-    documents = dataset.data
-
     no_features = 1000
 
     # NMF is able to use tf-idf
@@ -100,7 +98,7 @@ def definition(message, say):
     # keywords is just a list containing strings.
     # topics is a list containing a single entry. That entry is another list
     # containing the actual topic strings.
-    return topics
+    return topics[0]
 
 
 # Junk code
