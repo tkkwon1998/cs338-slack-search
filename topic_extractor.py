@@ -1,7 +1,4 @@
 import os
-from slack_bolt import App
-import spacy
-import requests
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import datetime
@@ -10,9 +7,7 @@ from operator import itemgetter
 import math
 from nltk.corpus import stopwords
 from sklearn.decomposition import NMF
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-
-from utility import *
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 endpoint = "entries"
@@ -25,9 +20,6 @@ stop_words = set(stopwords.words('english'))
 today = datetime.datetime.today().date()
 today_epoch = datetime.datetime(today.year, today.month, today.day).timestamp()
 today_epoch = datetime.datetime.now().timestamp()
-# print(today_epoch)
-
-
 
 def get_messages(message):
     client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
@@ -54,55 +46,6 @@ def get_messages(message):
     except SlackApiError as e:
         print("Error: {}".format(e))
         return None
-
-
-def extract_keywords(text):
-    total_words = text.split()
-    total_word_length = len(total_words)
-
-    total_sentences = tokenize.sent_tokenize(text)
-    total_sent_len = len(total_sentences)
-
-    tf_score = {}
-    for each_word in total_words:
-        each_word = each_word.replace('.', '')
-        if each_word not in stop_words:
-            if each_word in tf_score:
-                tf_score[each_word] += 1
-            else:
-                tf_score[each_word] = 1
-
-    tf_score.update((x, y / int(total_word_length)) for x, y in tf_score.items())
-
-    # Check if a word is there in sentence list
-    def check_sent(word, sentences):
-        final = [all([w in x for w in word]) for x in sentences]
-        sent_len = [sentences[i] for i in range(0, len(final)) if final[i]]
-        return int(len(sent_len))
-
-    # Step 4: Calculate IDF for each word
-    idf_score = {}
-    for each_word in total_words:
-        each_word = each_word.replace('.', '')
-        if each_word not in stop_words:
-            if each_word in idf_score:
-                idf_score[each_word] = check_sent(each_word, total_sentences)
-            else:
-                idf_score[each_word] = 1
-
-    # Performing a log and divide
-    idf_score.update((x, math.log(int(total_sent_len) / y)) for x, y in idf_score.items())
-
-    tf_idf_score = {key: tf_score[key] * idf_score.get(key, 0) for key in tf_score.keys()}
-
-    def get_top_n(dict_elem, n):
-        result = sorted(dict_elem.items(), key=itemgetter(1), reverse=True)[:n]
-        return result
-
-    ret = []
-    for i in get_top_n(tf_idf_score, 5):
-        ret.append(i[0])
-    return ret
 
 
 def extract_topic(text_list):
@@ -136,19 +79,13 @@ def extract_topic(text_list):
     return topics
 
 
-
-# @app.message("Why")
-# def idk(message, say):
-#     user = message['user']
-#     say(f"I don't know man.")
-
-
 def definition(message, say):
     test, testl = get_messages(message)
     print(test)
 
-    keywords = extract_keywords(test)
-    say("The keywords are: {}".format(keywords))
+    # Just for testing
+    # keywords = extract_keywords(test)
+    # say("The keywords are: {}".format(keywords))
 
     topics = extract_topic(testl)
     say("The topics are:")
@@ -160,31 +97,14 @@ def definition(message, say):
         ptopics = ptopics[:-2]
         say("{}: {}".format(i + 1, ptopics))
 
-    nlp = spacy.load('en_core_web_sm')
-    doc = nlp(message["text"])
-
-    sub_toks = [tok for tok in doc if (tok.dep_ == "nsubj")]
-    obj_toks = [tok for tok in doc if (tok.dep_ == "pobj")]
-
-    # Check outputs in terminal
-    # pprint(sub_toks)
-    # pprint(type(sub_toks).__name__) # list
-    # pprint(obj_toks)
-    # pprint(type(obj_toks).__name__) # list
-    # pprint(keywords)
-    # pprint(type(obj_toks).__name__) # list
-    # pprint(topics)
-    # pprint(type(topics).__name__) # A list within a list. Not sure why.
-
     # keywords is just a list containing strings.
     # topics is a list containing a single entry. That entry is another list
     # containing the actual topic strings.
-    return (keywords, topics[0])
-    
-    # Old Oxford Dictionary code. Kept for reference.
-    # if 'definition' in sub_toks[0].string:
-    #     word_id = obj_toks[0].string
+    return topics
 
+
+# Junk code
+    # Old Oxford Dictionary code. Kept for reference.
     #     url = "https://od-api.oxforddictionaries.com/api/v2/" + endpoint + "/" + language_code + "/" + word_id.lower()
     #     r = requests.get(url, headers={"app_id": app_id, "app_key": app_key})
     #     # print("code {}\n".format(r.status_code))
@@ -212,12 +132,66 @@ def definition(message, say):
     #     say(f"I don't know man.")
 
 
+# @app.message("Why")
+# def idk(message, say):
+#     user = message['user']
+#     say(f"I don't know man.")
+
+
 # @app.event("app_mention")
 # def event_test(body, say, logger):
 #     logger.info(body)
 #     say("What's up?")
 
+# def extract_keywords(text):
+#     total_words = text.split()
+#     total_word_length = len(total_words)
+#
+#     total_sentences = tokenize.sent_tokenize(text)
+#     total_sent_len = len(total_sentences)
+#
+#     tf_score = {}
+#     for each_word in total_words:
+#         each_word = each_word.replace('.', '')
+#         if each_word not in stop_words:
+#             if each_word in tf_score:
+#                 tf_score[each_word] += 1
+#             else:
+#                 tf_score[each_word] = 1
+#
+#     tf_score.update((x, y / int(total_word_length)) for x, y in tf_score.items())
+#
+#     # Check if a word is there in sentence list
+#     def check_sent(word, sentences):
+#         final = [all([w in x for w in word]) for x in sentences]
+#         sent_len = [sentences[i] for i in range(0, len(final)) if final[i]]
+#         return int(len(sent_len))
+#
+#     # Step 4: Calculate IDF for each word
+#     idf_score = {}
+#     for each_word in total_words:
+#         each_word = each_word.replace('.', '')
+#         if each_word not in stop_words:
+#             if each_word in idf_score:
+#                 idf_score[each_word] = check_sent(each_word, total_sentences)
+#             else:
+#                 idf_score[each_word] = 1
+#
+#     # Performing a log and divide
+#     idf_score.update((x, math.log(int(total_sent_len) / y)) for x, y in idf_score.items())
+#
+#     tf_idf_score = {key: tf_score[key] * idf_score.get(key, 0) for key in tf_score.keys()}
+#
+#     def get_top_n(dict_elem, n):
+#         result = sorted(dict_elem.items(), key=itemgetter(1), reverse=True)[:n]
+#         return result
+#
+#     ret = []
+#     for i in get_top_n(tf_idf_score, 5):
+#         ret.append(i[0])
+#     return ret
+
 
 # Start your app
-if __name__ == "__main__":
-    app.start(3000)
+# if __name__ == "__main__":
+#     app.start(3000)

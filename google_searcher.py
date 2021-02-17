@@ -1,5 +1,5 @@
 from googleapiclient.discovery import build
-import json
+
 
 def google_search(search_term, api_key, cse_id, **kwargs):
     service = build("customsearch", "v1", developerKey=api_key)

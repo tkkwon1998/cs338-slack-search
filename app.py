@@ -1,6 +1,7 @@
 import os
 from slack_bolt import App
 import re
+import spacy
 
 from google_searcher import *
 from topic_extractor import *
@@ -19,10 +20,6 @@ CSE_ID =                                f.readline()[:-1]
 os.environ['SLACK_BOT_TOKEN'] =         f.readline()[:-1]
 os.environ['SLACK_SIGNING_SECRET'] =    f.readline()[:-1]
 
-# Check keys
-# print(f'\n||{os.environ["SLACK_BOT_TOKEN"]}||\n')
-# print(f'\n||{os.environ["SLACK_SIGNING_SECRET"]}||\n')
-
 
 # Initializes your app with your bot token and signing secret
 app = App(
@@ -37,35 +34,33 @@ def message_hello(message, say):
     say(f"Hey there <@{message['user']}>!")
 
 
-# Old "what" handler. Kept for reference.
-# @app.message(re.compile('^[Ww]hat\s'))
-# def wiki_link(message, say):
-#     say('Matched')
-#     query = message["text"][8:]
-#     query += " Wikipedia"
-
-#     result = google_search(query, GOOGLE_API_KEY, CSE_ID)
-
-#     link = result["items"][0]["link"]
-
-#     say(link)
-
-
 # New "what" handler.
 # Always grabs the last word in the sentence.
 @app.message(re.compile('^[Ww]hat\s'))
 def what_handler(message, say):
 
     # Word to be searched. Takes last word from input sentence.
-    query = message["text"].split()[-1]
+    # query = message["text"].split()[-1]
+
+    nlp = spacy.load('en_core_web_sm')
+    doc = nlp(message["text"])
+
+    sub_toks = [tok for tok in doc if (tok.dep_ == "nsubj")]
+    obj_toks = [tok for tok in doc if (tok.dep_ == "pobj")]
+
+    query = ""
+    if 'definition' in sub_toks[0].string:
+        query = obj_toks[0].string.lower()
+
+    query = "intitle:" + query
 
     # Build up string to be googled. Query is repeated twice to highlight it.
     # https://www.lifewire.com/how-to-search-specific-domain-in-google-3481807
-    search_string = f'site:en.wikipedia.org {query} {query}'
+    search_string = f'site:en.wikipedia.org {query}' #{query}'
 
     say(f'You asked about: "{query}." Thinking...')
 
-    keywords, topics = definition(message, say)
+    topics = definition(message, say)
     
     # https://stackoverflow.com/questions/12453580/how-to-concatenate-items-in-a-list-to-a-single-string
     topics_str = ' '.join(topics)
@@ -87,7 +82,16 @@ def what_handler(message, say):
 if __name__ == "__main__":
     app.start(port=int(os.environ.get("PORT", 3000)))
 
+# Old "what" handler. Kept for reference.
+# @app.message(re.compile('^[Ww]hat\s'))
+# def wiki_link(message, say):
+#     say('Matched')
+#     query = message["text"][8:]
+#     query += " Wikipedia"
 
+#     result = google_search(query, GOOGLE_API_KEY, CSE_ID)
 
+#     link = result["items"][0]["link"]
 
+#     say(link)
 
