@@ -1,7 +1,9 @@
 *.DS_Store
 
-issues.txt
 ngrok
-reminders.txt
-search_test.py
-tokens.txt
+
+info/
+sandbox/
+__pycache__/
+
+keys.txt
