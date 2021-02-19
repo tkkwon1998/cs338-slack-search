@@ -2,9 +2,6 @@ import os
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import datetime
-from nltk import tokenize
-from operator import itemgetter
-import math
 from nltk.corpus import stopwords
 from sklearn.decomposition import NMF
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -17,12 +14,14 @@ language_code = "en-us"
 stop_words = set(stopwords.words('english'))
 
 # Currently at today, but will change, for testing -- set to when script runs
-today = datetime.datetime.today().date()
-today_epoch = datetime.datetime(today.year, today.month, today.day).timestamp()
+# today = datetime.datetime.today().date()
+# today_epoch = datetime.datetime(today.year, today.month, today.day).timestamp()
 today_epoch = datetime.datetime.now().timestamp()
 
+word_count_thresh = 150
 
 def get_messages(message):
+    global today_epoch
     client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
     channel_id = message["channel"]
 
@@ -33,16 +32,24 @@ def get_messages(message):
         text = ""
         list_form = []
 
-        # 'bot_id'
-        for s in conversation_history:
+        word_count = 0
+        for s_ind in range(len(conversation_history) - 1, -1, -1):
+            s = conversation_history[s_ind]
             try:
-                # Filter out the slackbot
-                if s['type'] == 'message':
+                # Filter out the slackbot messages
+                if s['type'] == 'message' and 'bot_id' not in s and s['client_msg_id'] != message['client_msg_id']:
                     text += s['text'] + " "
+                    word_count += s['text'].count(" ") + 1
                     list_form.append(s['text'])
+                # Try to only look at the 150 most recent words for the naive multiple context handing feature
+                if word_count > word_count_thresh:
+                    break
             except:
                 continue
         text = text[:-1]
+
+        # By default, assume topic is changing when a question is asked.
+        today_epoch = datetime.datetime.now().timestamp()
 
         return text, list_form
 
@@ -81,10 +88,6 @@ def definition(message, say):
     test, testl = get_messages(message)
     print(test)
 
-    # Just for testing
-    # keywords = extract_keywords(test)
-    # say("The keywords are: {}".format(keywords))
-
     topics = extract_topic(testl)
     say("The topics are:")
     for i in range(0, len(topics)):
@@ -100,96 +103,3 @@ def definition(message, say):
     # containing the actual topic strings.
     return topics[0]
 
-
-# Junk code
-    # Old Oxford Dictionary code. Kept for reference.
-    #     url = "https://od-api.oxforddictionaries.com/api/v2/" + endpoint + "/" + language_code + "/" + word_id.lower()
-    #     r = requests.get(url, headers={"app_id": app_id, "app_key": app_key})
-    #     # print("code {}\n".format(r.status_code))
-    #     # print("text \n" + r.text)
-    #     json_ret = r.json()
-    #     results = json_ret["results"]
-
-    #     say("There is/are " + str(len(results)) + " result(s).")
-    #     for i in range(0, len(results)):
-    #         result = results[i]
-    #         lexical_entries = result["lexicalEntries"]
-    #         say("There is/are " + str(len(lexical_entries)) + " lexical entry/entries in result " + str(i + 1) + ".")
-    #         for j in range(0, len(lexical_entries)):
-    #             entries = lexical_entries[j]['entries']
-    #             say("There is/are " + str(len(entries)) + " entry/entries in lexical entry " + str(j + 1) + ".")
-    #             for k in range(0, len(entries)):
-    #                 senses = entries[k]['senses']
-    #                 say("There is/are " + str(len(senses)) + " sense(s) in entry " + str(k + 1) + ".")
-    #                 for senses_ind in range(0, len(senses)):
-    #                     defs = senses[senses_ind]['definitions']
-    #                     say("There is/are " + str(len(defs)) + " definition(s) in sense " + str(senses_ind + 1) + ".")
-    #                     for def_ind in range(0, len(defs)):
-    #                         say(str(def_ind + 1) + ": " + defs[def_ind])
-    # else:
-    #     say(f"I don't know man.")
-
-
-# @app.message("Why")
-# def idk(message, say):
-#     user = message['user']
-#     say(f"I don't know man.")
-
-
-# @app.event("app_mention")
-# def event_test(body, say, logger):
-#     logger.info(body)
-#     say("What's up?")
-
-# def extract_keywords(text):
-#     total_words = text.split()
-#     total_word_length = len(total_words)
-#
-#     total_sentences = tokenize.sent_tokenize(text)
-#     total_sent_len = len(total_sentences)
-#
-#     tf_score = {}
-#     for each_word in total_words:
-#         each_word = each_word.replace('.', '')
-#         if each_word not in stop_words:
-#             if each_word in tf_score:
-#                 tf_score[each_word] += 1
-#             else:
-#                 tf_score[each_word] = 1
-#
-#     tf_score.update((x, y / int(total_word_length)) for x, y in tf_score.items())
-#
-#     # Check if a word is there in sentence list
-#     def check_sent(word, sentences):
-#         final = [all([w in x for w in word]) for x in sentences]
-#         sent_len = [sentences[i] for i in range(0, len(final)) if final[i]]
-#         return int(len(sent_len))
-#
-#     # Step 4: Calculate IDF for each word
-#     idf_score = {}
-#     for each_word in total_words:
-#         each_word = each_word.replace('.', '')
-#         if each_word not in stop_words:
-#             if each_word in idf_score:
-#                 idf_score[each_word] = check_sent(each_word, total_sentences)
-#             else:
-#                 idf_score[each_word] = 1
-#
-#     # Performing a log and divide
-#     idf_score.update((x, math.log(int(total_sent_len) / y)) for x, y in idf_score.items())
-#
-#     tf_idf_score = {key: tf_score[key] * idf_score.get(key, 0) for key in tf_score.keys()}
-#
-#     def get_top_n(dict_elem, n):
-#         result = sorted(dict_elem.items(), key=itemgetter(1), reverse=True)[:n]
-#         return result
-#
-#     ret = []
-#     for i in get_top_n(tf_idf_score, 5):
-#         ret.append(i[0])
-#     return ret
-
-
-# Start your app
-# if __name__ == "__main__":
-#     app.start(3000)

@@ -48,21 +48,25 @@ def what_handler(message, say):
     sub_toks = [tok for tok in doc if (tok.dep_ == "nsubj")]
     obj_toks = [tok for tok in doc if (tok.dep_ == "pobj")]
 
-    query = ""
+    # Checks if definition is part of the sentence before processing it.
     if 'definition' in sub_toks[0].text:
-        query = obj_toks[0].text.lower()
+        obj = obj_toks[0].text.lower()
+    else:
+        return
 
-    say(f'You asked about: "{query}." Thinking...')
+    say(f'You asked about: "{obj}." Thinking...')
 
-    query = "intitle:" + query
+    query = "intitle:" + obj
 
     # Build up string to be googled. Query is repeated twice to highlight it.
     # https://www.lifewire.com/how-to-search-specific-domain-in-google-3481807
-    search_string = f'site:en.wikipedia.org {query}' #{query}'
+    search_string = f'site:en.wikipedia.org {query}'
 
     topics = definition(message, say)
     
     # https://stackoverflow.com/questions/12453580/how-to-concatenate-items-in-a-list-to-a-single-string
+    if obj not in topics:
+        search_string += " " + obj
     topics_str = ' '.join(topics)
     search_string = f'{search_string} {topics_str}'
 
@@ -81,17 +85,4 @@ def what_handler(message, say):
 # Start your app
 if __name__ == "__main__":
     app.start(port=int(os.environ.get("PORT", 3000)))
-
-# Old "what" handler. Kept for reference.
-# @app.message(re.compile('^[Ww]hat\s'))
-# def wiki_link(message, say):
-#     say('Matched')
-#     query = message["text"][8:]
-#     query += " Wikipedia"
-
-#     result = google_search(query, GOOGLE_API_KEY, CSE_ID)
-
-#     link = result["items"][0]["link"]
-
-#     say(link)
 
