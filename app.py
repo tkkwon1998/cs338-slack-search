@@ -20,7 +20,7 @@ CSE_ID =                                f.readline()[:-1]
 os.environ['SLACK_BOT_TOKEN'] =         f.readline()[:-1]
 os.environ['SLACK_SIGNING_SECRET'] =    f.readline()[:-1]
 
-
+print(os.environ.get("SLACK_BOT_TOKEN"))
 # Initializes your app with your bot token and signing secret
 app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),

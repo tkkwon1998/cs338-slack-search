@@ -6,6 +6,8 @@ from nltk.corpus import stopwords
 from sklearn.decomposition import NMF
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+import spacy
+
 
 endpoint = "entries"
 language_code = "en-us"
@@ -41,6 +43,7 @@ def get_messages(message):
                     text += s['text'] + " "
                     word_count += s['text'].count(" ") + 1
                     list_form.append(s['text'])
+                    print(s['text'])
                 # Try to only look at the 150 most recent words for the naive multiple context handing feature
                 if word_count > word_count_thresh:
                     break
@@ -83,12 +86,24 @@ def extract_topic(text_list):
     topics = display_topics(nmf, tfidf_feature_names, no_top_words)
     return topics
 
+def get_nouns(text):
+    result_list = []
+    nlp = spacy.load("en_core_web_sm")
+    doc = nlp(text)
+    for token in doc:
+        if token.dep == "dobj":
+            result_list.append(token.text)
+    
+    while len(result_list) < 150:
+        result_list = result_list + result_list
+    return result_list
 
 def definition(message, say):
     test, testl = get_messages(message)
-    print(test)
+    nouns = get_nouns(test)
+    print("NOUNS: ", nouns)
 
-    topics = extract_topic(testl)
+    topics = extract_topic(nouns)
     say("The topics are:")
     for i in range(0, len(topics)):
         ltopics = topics[i]
