@@ -34,6 +34,19 @@ def message_hello(message, say):
     say(f"Hey there <@{message['user']}>!")
 
 
+@app.message(re.compile('^:query\s'))
+def google_query(message, say):
+    msg = message["text"][len(":query "):]
+
+    # Get full search results
+    result = google_search(msg, GOOGLE_API_KEY, CSE_ID)
+
+    # Take link to first result
+    link = result["items"][0]["link"]
+
+    say(link)
+
+
 # New "what" handler.
 # Always grabs the last word in the sentence.
 @app.message(re.compile('^[Ww]hat\s'))
@@ -80,7 +93,7 @@ def what_handler(message, say):
     link = result["items"][0]["link"]
 
     say(link)
-
+    say("If this was not the result you wanted, you can also submit a google query by typing :query before your query.")
 
 # Start your app
 if __name__ == "__main__":
