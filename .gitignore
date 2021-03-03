@@ -7,3 +7,10 @@ sandbox/
 __pycache__/
 
 keys.txt
+
+.venv/
+
+keys_for_slack_search_bot.txt
+
+raw_homepage.txt
+
