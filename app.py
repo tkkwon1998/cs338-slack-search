@@ -2,6 +2,8 @@ import os
 from slack_bolt import App
 import re
 import spacy
+import json
+import urllib3
 
 from google_searcher import *
 from topic_extractor import *
@@ -99,13 +101,7 @@ def what_handler(message, say, client):
             say("Using channel topic for additional context.")
     # ---------------Config code end
 
-    pprint("About to go get topics")
-
     topics = definition(message, say)
-
-    pprint(topics)
-
-    pprint("Finished getting topics")
     
     # https://stackoverflow.com/questions/12453580/how-to-concatenate-items-in-a-list-to-a-single-string
     if obj not in topics:
@@ -177,6 +173,28 @@ def display_home_tab(client, event, logger):
   
     except Exception as e:
         logger.error(f"Error publishing home tab: {e}")
+
+
+# Britannica API code:
+@app.message(re.compile("^[Ww]hat\sis|^[Ww]here\sis|^[Ww]hen\sis|^[Ww]ho\sis|^[Hh]ow\sis"))
+def ask_whatIs(message, say):
+    question = message["text"]
+    http = urllib3.PoolManager()
+    r = http.request('GET',
+                    'https://rdc1nf9jza.execute-api.us-east-1.amazonaws.com/api/qna',
+                    headers={
+                        'x-api-key': '9HeBB23LR4a8mruNNf3kq17fFuR9b4JP1q5KSMCC'},
+                    fields={'search_string': question})
+    result_json = json.loads(r.data)
+    print(result_json)
+    say(f'You asked: "{question} " Thinking...')
+    if "longAnswer" not in result_json:
+        say("Sorry, we couldn't find an exact answer. Maybe, this is what you are looking for:")
+        say(result_json["mendelResults"][0]["paragraph"])
+    else:
+        answer = result_json["longAnswer"]
+        sentence_split = answer.split('. ')
+        say(sentence_split[0] + '.')
 
 
 # Start your app
