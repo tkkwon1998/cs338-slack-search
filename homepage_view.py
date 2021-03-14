@@ -50,7 +50,7 @@ def get_homepage_view():
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": "`<query word>??`"
+                            "text": "What is the definition of `<query word>`?"
                         },
                         {
                             "type": "mrkdwn",
@@ -63,11 +63,11 @@ def get_homepage_view():
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": "`<query sentence>???`"
+                            "text": "`<query sentence>`"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": "Perform a *short-answer search* using `<query sentence>`, which should be an entire sentence in natural language. For example, it could be 'What is George Washington's birthday?'"
+                            "text": "Perform a *short-answer search* using `<query sentence>`, which should be an entire sentence in natural language. This sentence should begin with either 'Who is', 'Where is', 'How is', or 'What is'. For example, it could be 'What is George Washington's birthday?'"
                         }
                     ]
                 },
